@@ -3,8 +3,7 @@ import mediapipe as mp
 import serial
 import time
 
-# === Setup ===
-port = "COM5"
+port = "/dev/ttyUSB0"
 baud = 115200
 esp = serial.Serial(port, baud, timeout=1)
 time.sleep(2)
@@ -12,8 +11,7 @@ time.sleep(2)
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 
-cap = cv2.VideoCapture(2)
-
+cap = cv2.VideoCapture("http://100.115.92.22:8080/video")
 hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
 
 def distance(p1, p2):
@@ -31,7 +29,6 @@ while True:
         for hand_landmarks in results.multi_hand_landmarks:
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # Finger tip indices: index=8, middle=12, ring=16, thumb=4
             thumbtip = hand_landmarks.landmark[4]
             indexdip = hand_landmarks.landmark[7]
             indextip = hand_landmarks.landmark[8]
@@ -43,14 +40,12 @@ while True:
             pinkytip = hand_landmarks.landmark[20]
             pinkymcp = hand_landmarks.landmark[17]
 
-            # Distances
             d_index = distance(indextip, indexmcp)
             d_middle = distance(middletip, middlemcp)
             d_ring = distance(ringtip, ringmcp)
             d_pinky = distance(pinkytip, pinkymcp)
             d_thumb = distance(indexdip, thumbtip)
 
-            # Map distances → servo angle
             def map_angle(d):
                 angle_index = int(min(max((d - 0.02) * 1000, 0), 180))
                 return angle_index
@@ -64,7 +59,6 @@ while True:
             msg = f"{a1},{a2},{a3},{a4},{a5}\n"
             esp.write(msg.encode())
 
-            # Show values on screen
             cv2.putText(frame, msg.strip(), (10, 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
 
